@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <title>Adams concept</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	   <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+	  <link href='https://fonts.googleapis.com/css?family=Cormorant Unicase' rel='stylesheet'>
+<style>
+
+ input, select{
+	border:0px solid #000;
+	margin:0; 
+	background:transparent;
+	width:100%;
+	cursor: pointer;
+ }
+ input:focus {
+	background-color: #e6ffe6;
+ }
+ table tr td {
+	border-right:1px solid #000; 
+	border:1px solid #000;
+ }
+ table tr th {
+	border-right:1px solid #000; 
+	border-bottom:1px solid #000;
+	border-top:1px solid #000;
+	
+ }
+ table tr th input {
+	height: 45px;
+	padding-left: 5px;
+ }
+ table {
+	background: #fff none repeat scroll 0 0;
+	border-left: 1px solid #000;
+	border-top: 1px solid #000;
+	font-size: 1.3em;
+ }
+ table tr:nth-child(even){
+ b	ackground:#ccc;
+ }
+ table tr:nth-child(odd){
+	background:#eee;
+ }
+ .orderFORM {
+	margin-top: 50px;
+ }
+ 
+ .glyphicon {
+	font-size: 22px;
+	margin-right: 10px;
+ }
+ 
+  .glyphicon:hover {
+	color: green;
+ }
+ 
+ 
+ .page-header {
+	 font-family: 'Cormorant Unicase';
+	 font-weight: bold;
+	 font-size: 22px;
+	 background-color:  #00b3b3;
+ }
+ 
+ h1 {
+	font-size: 2em;
+	 font-weight: bold;
+ }
+ 
+ h3 {
+ font-weight: bold;
+ }
+</style>
+   </head>
+   <body onload="newRow()">
+      
+<div class="page-header">
+  <div class="container"><h1>Company Name</h1><h3>Order form</h3></div>
+</div>
+	  <div class="container">
+	    
+	  
+         <div class="orderFORM">
+            <div style="text-align: right;" id="newRowbtn">
+               <span title="DOUBLE CLICK TO DELETE ROW" class="glyphicon glyphicon-info-sign"></span>
+			   <button onclick="newRow()" class="btn btn-primary">New Row</button>
+               <button onClick="makeCSV()" class="btn btn-primary">Submit Form</button>
+            </div>
+            <table id="order" cellpadding="0"; cellspacing="0">
+               <tr>
+                  <th style="text-align: right; padding-right: 4px;" width="10%">PO:</th>
+                  <th width="150"><input type="text" /></th>
+			
+               </tr>
+               <tr id="HEADERS">
+                  <th width="13%">CTN Number</th>
+                  <th width="18%">SKU</th>
+                  <th width="12%">CTN QTY</th>
+                  <th width="14%">COLOUR</th>
+                  <th width="16%">SIZE</th>
+                  <th width="13%">P/CTN</th>
+                  <th width="14%">TOTAL PCS</th>
+               </tr>
+            </table>	
+
+				
+         </div>
+      </div>
+      <script>
+         function populateDD() {
+         	var value = ["OS", "XS", "S", "M", "L", "XL"];
+         	var text = ["OS", "Extra Small", "Small", "Medium", "Large", "Extra Large"];
+         	var option = '';
+         	for (var i=0;i<value.length;i++){
+         	   option += '<option value="'+ value[i] + '">' + text[i] + '</option>';
+         	}
+         				
+         		$('.size').each(function(){			
+         				if(!$(this).hasClass("alreadyAdded")) 
+         				{	
+         					$(this).append(option)
+         					$(this).addClass("alreadyAdded")
+         				}
+             });
+         		
+         }
+            
+         function newRow() {
+         	$('#order').append(row);
+         	populateDD()
+         }
+		 
+		 $(document.body).on('dblclick', 'tr' ,function(){
+			var count = $('#order tr').length
+			if($(this).hasClass("removable") && count > 3)
+				$( this ).remove()		
+		});
+         
+         var row = '<tr class="removable"><td><input class="ctn" type="text" /></td><td><input class="sku" type="text" /></td><td><input class="ctnQty" required type="text" /></td> <td><input class="color" required type="text" /></td> <td><input style="display: none;" type="text" /><select class="size" required><option disabled selected value>Select an option</option></select></td><td><input class="pctn" required type="text" /></td><td><input totalP required type="text" /></td></tr>'
+      
+		 
+		 
+		 $(document.body).on('change', '.size' ,function(){
+			var selectValue = $(this).find(":selected").val();
+			
+			var otherInput = $(this).closest('td').find('input');
+			otherInput.val(selectValue)
+		});
+		 
+ 
+function makeCSV() {
+
+  var titles = [];
+  var data = [];
+
+  $('#HEADERS th').each(function() {
+    titles.push($(this).text());
+  });
+  
+  $('#order td').each(function() {
+		  
+	$(this).find("input").each(function() {
+        var text = this.value
+		data.push(text);
+    });
+	  
+  });
+ 
+  var CSVString = prepCSVRow(titles, titles.length, '');
+  CSVString = prepCSVRow(data, titles.length, CSVString);
+
+
+  var downloadLink = document.createElement("a");
+  var blob = new Blob(["\ufeff", CSVString]);
+  var url = URL.createObjectURL(blob);
+  downloadLink.href = url;
+  downloadLink.download = "data.csv";
+
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
+};
+
+function prepCSVRow(arr, columnCount, initial) {
+  var row = '';
+  var delimeter = ','; 
+  var newLine = '\r\n'; 
+
+  function splitArray(_arr, _count) {
+    var splitted = [];
+    var result = [];
+    _arr.forEach(function(item, idx) {
+      if ((idx + 1) % _count === 0) {
+        splitted.push(item);
+        result.push(splitted);
+        splitted = [];
+      } else {
+        splitted.push(item);
+      }
+    });
+    return result;
+  }
+  var plainArr = splitArray(arr, columnCount);
+  plainArr.forEach(function(arrItem) {
+    arrItem.forEach(function(item, idx) {
+      row += item + ((idx + 1) === arrItem.length ? '' : delimeter);
+    });
+    row += newLine;
+  });
+  return initial + row;
+}
+  
+  
+	  
+	  
+	  </script>
+   </body>
+</html>
