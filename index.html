@@ -9,6 +9,7 @@
       <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 	   <script src="https://code.jquery.com/jquery-1.10.2.js"></script>
 	  <link href='https://fonts.googleapis.com/css?family=Cormorant Unicase' rel='stylesheet'>
+	  <link href='https://fonts.googleapis.com/css?family=ABeeZee' rel='stylesheet'>
 <style>
 
  input, select{
@@ -68,6 +69,10 @@
 	 background-color:  #00b3b3;
  }
  
+p {
+	font-family: 'ABeeZee';font-size: 14px;
+}
+ 
  h1 {
 	font-size: 2em;
 	 font-weight: bold;
@@ -88,14 +93,14 @@
 	  
          <div class="orderFORM">
             <div style="text-align: right;" id="newRowbtn">
-               <span title="DOUBLE CLICK TO DELETE ROW" class="glyphicon glyphicon-info-sign"></span>
-			   <button onclick="newRow()" class="btn btn-primary">New Row</button>
+               <p style="visibility: hidden;">Double click to delete row</p>
+			   <button onclick="newRow(), showHelp()" class="btn btn-primary">New Row</button>
                <button onClick="makeCSV()" class="btn btn-primary">Submit Form</button>
             </div>
             <table id="order" cellpadding="0"; cellspacing="0">
                <tr>
                   <th style="text-align: right; padding-right: 4px;" width="10%">PO:</th>
-                  <th width="150"><input type="text" /></th>
+                  <th width="150"><input id="PONumber" type="text" /></th>
 			
                </tr>
                <tr id="HEADERS">
@@ -113,6 +118,11 @@
          </div>
       </div>
       <script>
+	  
+	  function showHelp() {
+			$("p").css("visibility", "visible");
+	  }
+	  
          function populateDD() {
          	var value = ["OS", "XS", "S", "M", "L", "XL"];
          	var text = ["OS", "Extra Small", "Small", "Medium", "Large", "Extra Large"];
@@ -131,15 +141,17 @@
          		
          }
             
-         function newRow() {
+         function newRow() {			
          	$('#order').append(row);
          	populateDD()
          }
 		 
 		 $(document.body).on('dblclick', 'tr' ,function(){
 			var count = $('#order tr').length
-			if($(this).hasClass("removable") && count > 3)
-				$( this ).remove()		
+			if($(this).hasClass("removable") && count > 3) 
+				$( this ).remove()			
+			if($(this).hasClass("removable") && count == 4) 
+				$("p").css("visibility", "hidden");
 		});
          
          var row = '<tr class="removable"><td><input class="ctn" type="text" /></td><td><input class="sku" type="text" /></td><td><input class="ctnQty" required type="text" /></td> <td><input class="color" required type="text" /></td> <td><input style="display: none;" type="text" /><select class="size" required><option disabled selected value>Select an option</option></select></td><td><input class="pctn" required type="text" /></td><td><input totalP required type="text" /></td></tr>'
@@ -155,10 +167,20 @@
 		 
  
 function makeCSV() {
-
+ 
+ var d = new Date();
+ var PONumber = document.getElementById("PONumber").value 
+ var formattedDate = formatDateToStandard()
+ var formattedDate = formattedDate.slice(2, 8);
+ var mins = d.getMinutes().length <= 9 && d.getMinutes().length >= 0 ? mins = "0" + d.getMinutes() : d.getMinutes()
+ var formattedTime = d.getHours() + "" + mins
+    
+ 
   var titles = [];
   var data = [];
-
+  
+  
+  
   $('#HEADERS th').each(function() {
     titles.push($(this).text());
   });
@@ -172,27 +194,101 @@ function makeCSV() {
 	  
   });
  
-  var CSVString = prepCSVRow(titles, titles.length, '');
-  CSVString = prepCSVRow(data, titles.length, CSVString);
 
+/* TO DO: 
+
+		LOOP THROUGH EACH ITEM IN ARRAY AND CALL A NEW PREPARE ROW FUNCTION. IT TAKES THE VALUES IN THE ARRAY, AND BUILDS THE CSV ROW. THEN PASS IT
+		TO THE PREPSCVROW FUNTION SO IT WRITES IT TO THE FILE. 
+		
+		KEEP COUNT SO KNOW HOW FAR TO JUMP AHEAD IN DATA ARRAY, START AT 0 THEN AFTER FIRST ONE, 0 => 1 AND THEN MULTIPLE IT BY HEADERS.LEN. 
+		VALUE SHOULD EQUAL 7 AFTER FIRST ITERATION. WHEN YOU GO TO ADD THE SECOND ROW AND SEND DATE. IT KNOWS TO START AT INDEX 7 WHICH IS THE SECOND ENTRY IF THAT MAKES SENCE. 
+		
+		tested with this alert and it works perfectly
+*/
+		
+		//alert(data[7])
+
+ 
+
+  var startOfFile = ["ISA", formattedDate, formattedTime, PONumber]; 
+  var StartCartonContents = ["CTN", PONumber, PONumber + "ArrivalNum" + "cartonNumber"];
+  var listItems = ["LIN", "10SKU", "QTY", "CTX"];
+  var End = ["CTE", ""]
+ 
+ 
+ 
+ 
+	var CSVString = prepCSVRow(startOfFile, startOfFile.length, "");
+ 
+	for(var x = 0; (x < data.length / 7); x++) {
+		CSVString = prepCSVRow(getStartCartonContents(x), StartCartonContents.length, CSVString);
+		CSVString = prepCSVRow(getlistItems(x), listItems.length, CSVString);
+		CSVString = prepCSVRow(End, 1, CSVString);
+	}
+ 
+ 
+ function getStartCartonContents(y) {
+	// CTNNumber = (y * 7)
+	// SKU = ((y * 7) + 1)
+	CTNQTY = ((y * 7) + 2)
+	// COLOUR = ((y * 7) + 3)
+	// SIZE = ((y * 7) + 4)
+	// PCTN = ((y * 7) + 5)
+	// TOTAL PCS = ((y * 7) + 6)
+                 
+	return ["CTN", PONumber, PONumber + "" + data[CTNQTY]]
+				 
+ }
+ 
+
+  function getlistItems(y) {
+	// CTNNumber = (y * 7)
+	SKU = ((y * 7) + 1)
+	//CTNQTY = ((y * 7) + 2)
+	// COLOUR = ((y * 7) + 3)
+	// SIZE = ((y * 7) + 4)
+	// PCTN = ((y * 7) + 5)
+	TOTALPCS = ((y * 7) + 6)
+                 
+	return ["LIN", data[SKU], data[TOTALPCS], "CTX"];
+				 
+ }
+ 
 
   var downloadLink = document.createElement("a");
   var blob = new Blob(["\ufeff", CSVString]);
   var url = URL.createObjectURL(blob);
   downloadLink.href = url;
-  downloadLink.download = "data.csv";
+  
+  var nameOfFile = PONumber + " " + d.toDateString() + ".csv";
+  downloadLink.download = nameOfFile
 
   document.body.appendChild(downloadLink);
   downloadLink.click();
   document.body.removeChild(downloadLink);
 };
 
+
+
 function prepCSVRow(arr, columnCount, initial) {
   var row = '';
   var delimeter = ','; 
   var newLine = '\r\n'; 
 
-  function splitArray(_arr, _count) {
+  var plainArr = splitArray(arr, columnCount);
+  plainArr.forEach(function(arrItem) {
+    arrItem.forEach(function(item, idx) {
+      row += item + ((idx + 1) === arrItem.length ? '' : delimeter);
+    });
+   
+  });
+   row += newLine;
+  
+  
+  return initial + row;
+ 
+}
+    function splitArray(_arr, _count) {
     var splitted = [];
     var result = [];
     _arr.forEach(function(item, idx) {
@@ -206,18 +302,19 @@ function prepCSVRow(arr, columnCount, initial) {
     });
     return result;
   }
-  var plainArr = splitArray(arr, columnCount);
-  plainArr.forEach(function(arrItem) {
-    arrItem.forEach(function(item, idx) {
-      row += item + ((idx + 1) === arrItem.length ? '' : delimeter);
-    });
-    row += newLine;
-  });
-  return initial + row;
-}
-  
   
 	  
+	  
+function formatDateToStandard() {
+    var x = new Date();
+    var y = x.getFullYear().toString();
+    var m = (x.getMonth() + 1).toString();
+    var d = x.getDate().toString();
+    (d.length == 1) && (d = '0' + d);
+    (m.length == 1) && (m = '0' + m);
+    var yyyymmdd = y + m + d;
+    return yyyymmdd;
+}
 	  
 	  </script>
    </body>
